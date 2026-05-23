@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout Log</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #0c0c0c; color: #e0e0e0; font-family: 'Barlow', sans-serif; }
+  a { color: inherit; text-decoration: none; }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 0.06em; margin: 0 0 4px; color: #fff; }
+  .sub { font-size: 11px; color: #444; font-family: 'DM Mono', monospace; margin-bottom: 24px; }
+
+  /* Calendar */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-month { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.05em; color: #ccc; }
+  .cal-btn { background: transparent; border: 1px solid #222; border-radius: 4px; color: #555; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .cal-btn:hover { border-color: #444; color: #ccc; }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-dow { text-align: center; font-size: 9px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.08em; color: #333; padding: 4px 0; font-weight: 700; }
+  .cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; font-size: 12px; font-family: 'DM Mono', monospace; cursor: pointer; border: 1px solid transparent; position: relative; transition: all 0.15s; color: #555; }
+  .cal-day.has-session { color: #e0e0e0; background: #1a1a1a; border-color: #252525; }
+  .cal-day.has-session:hover { border-color: #f97316; }
+  .cal-day.selected { border-color: #f97316 !important; background: #1f1a14 !important; color: #f97316 !important; }
+  .cal-day.today { color: #f97316; }
+  .cal-day.today.has-session { color: #f97316; }
+  .cal-day.empty { cursor: default; }
+  .dot { width: 4px; height: 4px; border-radius: 50%; background: #f97316; position: absolute; bottom: 3px; opacity: 0.7; }
+
+  /* Session */
+  .session-card { margin-top: 20px; background: #141414; border: 1px solid #222; border-radius: 8px; overflow: hidden; }
+  .session-header { padding: 14px 16px; border-bottom: 1px solid #1e1e1e; display: flex; justify-content: space-between; align-items: flex-start; }
+  .session-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: #fff; }
+  .session-date { font-size: 11px; color: #444; font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .session-meta { display: flex; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; }
+  .meta-item { font-size: 11px; color: #555; }
+  .meta-item span { color: #888; font-family: 'DM Mono', monospace; }
+  .pct-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; }
+
+  .exercises { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .ex-block { }
+  .ex-name { font-size: 13px; font-weight: 600; color: #ccc; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.02em; margin-bottom: 5px; display: flex; justify-content: space-between; }
+  .ex-name .ex-done { font-size: 9px; color: #22c55e; border: 1px solid #22c55e44; border-radius: 3px; padding: 1px 5px; letter-spacing: 0.06em; }
+  .sets-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .set-pill { font-size: 11px; font-family: 'DM Mono', monospace; padding: 3px 7px; border-radius: 3px; }
+  .set-pill.done { background: #1c1c1c; border: 1px solid #2a2a2a; color: #777; }
+  .set-pill.skipped { background: #111; border: 1px solid #1a1a1a; color: #333; }
+  .ex-note { font-size: 11px; color: #555; font-style: italic; margin-top: 4px; }
+
+  .session-note { padding: 10px 16px; border-top: 1px solid #1a1a1a; font-size: 12px; color: #555; font-style: italic; line-height: 1.5; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: #333; }
+  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+  .empty-state p { font-size: 13px; margin: 0; line-height: 1.6; }
+
+  .loading { text-align: center; padding: 60px 20px; color: #333; font-size: 13px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.06em; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { display: inline-block; animation: spin 1s linear infinite; margin-right: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⬡ WORKOUT LOG</h1>
+  <div class="sub">read-only · public view</div>
+
+  <div class="cal-nav">
+    <button class="cal-btn" id="prev">‹</button>
+    <div class="cal-month" id="cal-month"></div>
+    <button class="cal-btn" id="next">›</button>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+
+  <div id="session-area"></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://amchallknjysticvfohh.supabase.co";
+const ANON_KEY     = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtY2hhbGxrbmp5c3RpY3Zmb2hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTU3OTcsImV4cCI6MjA5NDY5MTc5N30.rKKRtiovYTtEjzGtiRPmgoSYP0kkKJItKYRPVHzgNRI";
+const HDR = { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` };
+
+const DAY_LABELS = { mon:"Back + Biceps", tue:"Chest + Shoulders", wed:"Active Recovery", thu:"Legs", fri:"Back + Biceps (Vol)", sat:"Chest + Shoulders + Triceps", sun:"Rest" };
+const DOWS = ["SU","MO","TU","WE","TH","FR","SA"];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+let currentYear, currentMonth, sessionCache = {}, planCache = {}, selectedDate = null;
+
+async function fetchSessions(year, month) {
+  const from = `${year}-${String(month+1).padStart(2,'0')}-01`;
+  const to   = `${year}-${String(month+1).padStart(2,'0')}-31`;
+  const res  = await fetch(
+    `${SUPABASE_URL}/rest/v1/workout_sessions?date=gte.${from}&date=lte.${to}&select=date,day_id,session_data&order=date.asc`,
+    { headers: HDR }
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function fetchPlan() {
+  if (Object.keys(planCache).length) return planCache;
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/workout_plan?enabled=eq.true&select=day_id,ex_id,name,sets,type&order=day_id.asc,order_num.asc`,
+    { headers: HDR }
+  );
+  if (!res.ok) return {};
+  const rows = await res.json();
+  for (const r of rows) {
+    if (!planCache[r.day_id]) planCache[r.day_id] = [];
+    planCache[r.day_id].push(r);
+  }
+  return planCache;
+}
+
+function fmtSet(set, type) {
+  if (type === "timed")     return set.time     ? `${set.time}s`                             : null;
+  if (type === "amrap")     return set.reps     ? `${set.reps} reps`                         : null;
+  if (type === "combo")     return set.weight   ? `${set.weight} · ${set.repsA}/${set.repsB}`: null;
+  if (type === "bilateral") {
+    if (!set.weightL && !set.weightR) return null;
+    return `L${set.weightL||"?"}/R${set.weightR||"?"}${set.reps ? ` × ${set.reps}` : ""}`;
+  }
+  if (set.weight) return `${set.weight} × ${set.reps||"?"}`;
+  if (set.reps)   return `${set.reps} reps`;
+  return null;
+}
+
+function renderSession(date) {
+  const area = document.getElementById("session-area");
+  const data = sessionCache[date];
+
+  if (!data) {
+    area.innerHTML = `<div class="empty-state"><div class="icon">—</div><p>No session logged<br>for this date.</p></div>`;
+    return;
+  }
+
+  const { session_data: s, day_id } = data;
+  const plan = planCache[day_id] || [];
+  const exData = s.exData || {};
+
+  const donePlan = plan.filter(ex => exData[ex.ex_id]?.sets?.every(st => st.done));
+  const pct = plan.length ? Math.round((donePlan.length / plan.length) * 100) : 0;
+  const pctColor = pct === 100 ? "#22c55e" : "#f97316";
+
+  let metaHtml = "";
+  if (s.totalTime) metaHtml += `<div class="meta-item">Time <span>${s.totalTime} min</span></div>`;
+  if (s.energy)    metaHtml += `<div class="meta-item">Energy <span>${s.energy}/10</span></div>`;
+  if (s.painPost)  metaHtml += `<div class="meta-item">Pain <span style="color:${parseInt(s.painPost)>4?"#ef4444":"#888"}">${s.painPost}/10</span></div>`;
+  if (s.bw)        metaHtml += `<div class="meta-item">BW <span>${s.bw} lbs</span></div>`;
+
+  let exHtml = "";
+  for (const ex of plan) {
+    const d = exData[ex.ex_id];
+    if (!d) continue;
+    const doneSets = (d.sets || []).filter(st => st.done);
+    const anyData  = (d.sets || []).some(st => fmtSet(st, ex.type));
+    if (!doneSets.length && !anyData && !d.note) continue;
+
+    const allDone = doneSets.length === (d.sets||[]).length;
+    const pillsHtml = (d.sets || []).map(st => {
+      const label = fmtSet(st, ex.type);
+      if (!label && !st.done) return "";
+      return `<span class="set-pill ${st.done ? "done" : "skipped"}">${label || "—"}</span>`;
+    }).join("");
+
+    exHtml += `
+      <div class="ex-block">
+        <div class="ex-name">
+          ${ex.name}
+          ${allDone ? '<span class="ex-done">DONE</span>' : ""}
+        </div>
+        <div class="sets-row">${pillsHtml}</div>
+        ${d.note ? `<div class="ex-note">↳ ${d.note}</div>` : ""}
+      </div>`;
+  }
+
+  area.innerHTML = `
+    <div class="session-card">
+      <div class="session-header">
+        <div>
+          <div class="session-title">${DAY_LABELS[day_id] || day_id}</div>
+          <div class="session-date">${date}</div>
+        </div>
+        <div class="pct-badge" style="color:${pctColor}">${pct}%</div>
+      </div>
+      ${metaHtml ? `<div class="session-meta">${metaHtml}</div>` : ""}
+      <div class="exercises">${exHtml || '<div style="color:#333;font-size:12px;padding:8px 0">No exercise data recorded.</div>'}</div>
+      ${s.sessionNote ? `<div class="session-note">"${s.sessionNote}"</div>` : ""}
+    </div>`;
+}
+
+async function renderCalendar() {
+  const monthEl = document.getElementById("cal-month");
+  const gridEl  = document.getElementById("cal-grid");
+
+  monthEl.textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+  gridEl.innerHTML    = DOWS.map(d => `<div class="cal-dow">${d}</div>`).join("");
+
+  // Show loading indicator in session area while fetching
+  document.getElementById("session-area").innerHTML = `<div class="loading"><span class="spin">⟳</span>Loading…</div>`;
+
+  const [rows] = await Promise.all([
+    fetchSessions(currentYear, currentMonth),
+    fetchPlan(),
+  ]);
+
+  // Build date → session map for this month
+  for (const r of rows) sessionCache[r.date] = r;
+
+  // First day of month weekday offset
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  for (let i = 0; i < firstDay; i++) {
+    gridEl.innerHTML += `<div class="cal-day empty"></div>`;
+  }
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr  = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasSess  = !!sessionCache[dateStr];
+    const isToday  = dateStr === todayStr;
+    const isSel    = dateStr === selectedDate;
+
+    const classes  = ["cal-day", hasSess?"has-session":"", isToday?"today":"", isSel?"selected":""].filter(Boolean).join(" ");
+    const dot      = hasSess ? `<span class="dot"></span>` : "";
+
+    gridEl.innerHTML += `<div class="${classes}" data-date="${dateStr}">${d}${dot}</div>`;
+  }
+
+  // Click handlers
+  gridEl.querySelectorAll(".cal-day.has-session").forEach(el => {
+    el.addEventListener("click", () => {
+      gridEl.querySelectorAll(".cal-day").forEach(e => e.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedDate = el.dataset.date;
+      renderSession(selectedDate);
+    });
+  });
+
+  // Auto-select most recent session or today
+  if (selectedDate && sessionCache[selectedDate]) {
+    const el = gridEl.querySelector(`[data-date="${selectedDate}"]`);
+    if (el) el.classList.add("selected");
+    renderSession(selectedDate);
+  } else {
+    // Find last session day in month
+    const lastSession = rows[rows.length - 1];
+    if (lastSession) {
+      selectedDate = lastSession.date;
+      const el = gridEl.querySelector(`[data-date="${selectedDate}"]`);
+      if (el) el.classList.add("selected");
+      renderSession(selectedDate);
+    } else {
+      document.getElementById("session-area").innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No sessions logged<br>this month.</p></div>`;
+    }
+  }
+}
+
+// Init
+const now = new Date();
+currentYear  = now.getFullYear();
+currentMonth = now.getMonth();
+
+document.getElementById("prev").addEventListener("click", () => {
+  currentMonth--;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+});
+document.getElementById("next").addEventListener("click", () => {
+  currentMonth++;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar();
+});
+
+renderCalendar();
+</script>
+</body>
+</html>
