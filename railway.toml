@@ -1,0 +1,11 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "python -m amazfit_mcp.server"
+healthcheckPath = "/mcp"
+healthcheckTimeout = 10
+restartPolicyType = "on_failure"
+
+[[services]]
+name = "amazfit-mcp"
