@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "amazfit-workout": {
+      "command": "python",
+      "args": ["-m", "amazfit_mcp.server"],
+      "cwd": "/path/to/Workouts",
+      "env": {
+        "SUPABASE_URL": "https://amchallknjysticvfohh.supabase.co",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtY2hhbGxrbmp5c3RpY3Zmb2hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTU3OTcsImV4cCI6MjA5NDY5MTc5N30.rKKRtiovYTtEjzGtiRPmgoSYP0kkKJItKYRPVHzgNRI",
+        "SUPABASE_SERVICE_KEY": "YOUR_SERVICE_ROLE_KEY_HERE",
+        "ZEPP_APP_TOKEN": "optional_token_from_zepp_authenticate",
+        "ZEPP_USER_ID": "optional_user_id",
+        "ZEPP_HOST": "api-mifit-de2.huami.com"
+      }
+    }
+  }
+}
